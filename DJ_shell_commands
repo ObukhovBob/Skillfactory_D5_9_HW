@@ -1,0 +1,25 @@
+User.objects.create_user('User1')
+Category.objects.create(category_name='экономика')
+Author.objects.create(user_id=1)
+a = Author.objects.get(user_id=1)
+Post.objects.create(header='Создать двух пользователей', text='Создать двух пользователей (с помощью метода User.objects.create_user(username)).', author=a)
+Post.objects.create(header='Создать как минимум 4 комментария', text='Создать как минимум 4 комментария к разным объектам модели Post (в каждом объекте должен быть как минимум один комментарий).', author=Author.objects.get(user_
+id='2'))
+Post.objects.create(header='Функции like() и dislike()', text='Применяя функции like() и dislike() к статьям/новостям и комментариям, скорректировать рейтинги этих объектов.', author=Author.objects.get(user_id='2'))
+Post.objects.create(header='Вывести дату добавления', text='Вывести дату добавления, username автора, рейтинг, заголовок и превью лучшей статьи, основываясь на лайках/дислайках к этой статье.', author=Author.objects.get(user_id=
+'1'))
+PostCategory.objects.create(post=Post.objects.get(pk=3), category=Category.objects.get(pk=2))
+
+Post.objects.get(pk=2).like()
+
+Comment.objects.create(com_text=':)', rating=2, post=post1, user=User.objects.get(username='User3'))
+
+Comment.objects.filter(post__author__user__username='User1')
+
+Author.objects.all().order_by('-rating').values('user__username','rating').first()
+
+Post.objects.all().order_by('-rating').values('timestamp', 'author__user__username', 'rating', 'header').first()
+
+top_post = Post.objects.all().order_by('-rating').first()
+top_post.preview()
+top_post.comment_set.all().values('timestamp', 'user__username', 'rating', 'com_text')
