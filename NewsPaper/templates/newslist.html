@@ -1,6 +1,7 @@
 <!--  наследуемся от шаблона default.html, который мы создавали для flatpages -->
 {% extends 'default.html' %}
 
+{% load custom_filters %}
 <!-- Название у нас будет News List -->
 {% block title %}
 News List
@@ -13,10 +14,12 @@ News List
 <hr>
 <table>
            <tr>
-               <td>Автор</td>
-               <td>Тип</td>
                <td>Дата</td>
                <td>Заголовок</td>
+               <td>Тип</td>
+               <td>Автор</td>
+               <td>Содержание</td>
+
            </tr>
 
            <!-- Для каждого товара будете генерироваться новая строчка,
@@ -29,10 +32,11 @@ News List
                 от переменных в Python. Здесь также можно получать доступ к
                 полям объекта модели. Например, здесь мы выводим имя,
                 в следующем столбце описание, и т.д.  -->
-               <td>{{ post.author.user }}</td>
-               <td>{{ post.get_content_type_display }}</td>
                <td>{{ post.timestamp|date:'d M Y' }}</td>
                <td>{{ post.header }}</td>
+               <td>{{ post.get_content_type_display }}</td>
+               <td>{{ post.author.user }}</td>
+               <td>{{ post.text|truncatechars:20|bad_words }}</td>
            </tr>
            {% endfor %}
 

@@ -1,6 +1,8 @@
 <!--  наследуемся от шаблона default.html, который мы создавали для flatpages -->
 {% extends 'default.html' %}
 
+
+{% load custom_filters %}
 <!-- Название у нас будет Product -->
 {% block title %}
 Статья
@@ -9,4 +11,20 @@
 <!-- В контенте на странице мы выводим сам товар, идентификатор которого был передан в url -->
 {% block content %}
 <h1>{{ article.header }}</h1>
+<table align="center">
+           <tr>
+               <td> <kbd> Дата </kbd></td>
+               <td> <small>{{ article.timestamp|date:'d M Y' }}</small></td>
+               <td><kbd>Тип</kbd></td>
+               <td><small>{{ article.get_content_type_display }}</small></td>
+               <td><kbd>Автор</kbd></td>
+               <td><small>{{ article.author.user }}</small></td>
+           </tr>
+
+       </table>
+<h4> {{ article.text|bad_words }} </h4>
+
+
+
+
 {% endblock content %}
