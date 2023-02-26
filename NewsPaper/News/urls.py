@@ -1,6 +1,6 @@
 from django.urls import path
 # Импортируем созданное нами представление
-from .views import NewsList, Article
+from .views import NewsList, Article, NewsSearch
 
 
 urlpatterns = [
@@ -14,4 +14,5 @@ urlpatterns = [
    # pk — это первичный ключ новости, который будет выводиться у нас в шаблон
    # int — указывает на то, что принимаются только целочисленные значения
    path('<int:pk>', Article.as_view()),
+   path('search/', NewsSearch.as_view()),
 ]
