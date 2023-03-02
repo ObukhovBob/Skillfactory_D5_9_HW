@@ -1,13 +1,31 @@
+import datetime
+
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from .filters import PostFilter
 # Create your views here.
 from .models import Post
+from .forms import PostForm
 
 
 class NewsList(ListView):
     # Указываем модель, объекты которой мы будем выводить
     model = Post
+    queryset = Post.objects.filter(content_type=Post.news)
+    # Поле, которое будет использоваться для сортировки объектов
+    ordering = 'timestamp'
+    # Указываем имя шаблона, в котором будут все инструкции о том,
+    # как именно пользователю должны быть показаны наши объекты
+    template_name = 'newslist.html'
+    # Это имя списка, в котором будут лежать все объекты.
+    # Его надо указать, чтобы обратиться к списку объектов в html-шаблоне.
+    context_object_name = 'posts'
+    paginate_by = 2
+
+class ArticleList(ListView):
+    # Указываем модель, объекты которой мы будем выводить
+    model = Post
+    queryset = Post.objects.filter(content_type=Post.article)
     # Поле, которое будет использоваться для сортировки объектов
     ordering = 'timestamp'
     # Указываем имя шаблона, в котором будут все инструкции о том,
@@ -58,3 +76,39 @@ class Article(DetailView):
     template_name = 'article.html'
     # Название объекта, в котором будет выбранный пользователем продукт
     context_object_name = 'article'
+
+
+# Добавляем новое представление для создания товаров.
+class NewsCreate(CreateView):
+    # Указываем нашу разработанную форму
+    form_class = PostForm
+    # модель товаров
+    model = Post
+    # и новый шаблон, в котором используется форма.
+    template_name = 'post_edit.html'
+
+    def form_valid(self, form):
+        post = form.save(commit=False)
+        post.content_type = Post.news
+        post.rating = 0
+        post.timestamp = datetime.datetime.now()
+        return super().form_valid(form)
+
+
+class ArticleCreate(CreateView):
+
+    form_class = PostForm
+    model = Post
+    template_name = 'post_edit.html'
+
+    def form_valid(self, form):
+        post = form.save(commit=False)
+        post.content_type = Post.article
+        post.rating = 0
+        post.timestamp = datetime.datetime.now()
+        return super().form_valid(form)
+
+class NewsUpdate(UpdateView):
+    form_class = PostForm
+    model = Post
+    template_name = 'post_edit.html'
