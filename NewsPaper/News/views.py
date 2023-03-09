@@ -1,11 +1,32 @@
 import datetime
-
+from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+
 from .filters import PostFilter
 # Create your views here.
-from .models import Post
+from .models import Post, BaseRegisterForm
 from .forms import PostForm
+
+
+class BaseRegisterView(CreateView):
+    model = User
+    form_class = BaseRegisterForm
+    success_url = '/'
+
+
+class AllList(ListView):
+    # Указываем модель, объекты которой мы будем выводить
+    model = Post
+    # Поле, которое будет использоваться для сортировки объектов
+    ordering = 'timestamp'
+    # Указываем имя шаблона, в котором будут все инструкции о том,
+    # как именно пользователю должны быть показаны наши объекты
+    template_name = 'newslist.html'
+    # Это имя списка, в котором будут лежать все объекты.
+    # Его надо указать, чтобы обратиться к списку объектов в html-шаблоне.
+    context_object_name = 'posts'
+    paginate_by = 2
 
 
 class NewsList(ListView):
@@ -21,6 +42,7 @@ class NewsList(ListView):
     # Его надо указать, чтобы обратиться к списку объектов в html-шаблоне.
     context_object_name = 'posts'
     paginate_by = 2
+
 
 class ArticleList(ListView):
     # Указываем модель, объекты которой мы будем выводить
@@ -96,7 +118,6 @@ class NewsCreate(CreateView):
 
 
 class ArticleCreate(CreateView):
-
     form_class = PostForm
     model = Post
     template_name = 'post_edit.html'
@@ -107,6 +128,7 @@ class ArticleCreate(CreateView):
         post.rating = 0
         post.timestamp = datetime.datetime.now()
         return super().form_valid(form)
+
 
 class NewsUpdate(UpdateView):
     form_class = PostForm

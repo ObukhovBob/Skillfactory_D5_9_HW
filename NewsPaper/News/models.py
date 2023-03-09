@@ -1,6 +1,23 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse
+from django import forms
+
+
+class BaseRegisterForm(UserCreationForm):
+    email = forms.EmailField(label="Email")
+    first_name = forms.CharField(label="Имя")
+    last_name = forms.CharField(label="Фамилия")
+
+    class Meta:
+        model = User
+        fields = ("username",
+                  "first_name",
+                  "last_name",
+                  "email",
+                  "password1",
+                  "password2",)
 
 
 class Author(models.Model):
@@ -18,7 +35,7 @@ class Author(models.Model):
             posts_rating = Post.objects.filter(author=author)
             for post_rate in posts_rating:
                 summ += int(post_rate.rating)
-            summ = summ*3
+            summ = summ * 3
             comments_rating = Comment.objects.filter(post__author=author)
             for comment_rate in comments_rating:
                 summ += int(comment_rate.rating)
@@ -35,12 +52,12 @@ class Category(models.Model):
     def __str__(self):
         return f'{self.category_name}'
 
+
 class Post(models.Model):
-    
     article = 'AR'
     news = 'NW'
     POSITIONS = [(article, 'Статья'), (news, 'Новость')]
-    
+
     header = models.CharField(max_length=128)
     rating = models.IntegerField(default=0)
     text = models.TextField()
@@ -62,6 +79,7 @@ class Post(models.Model):
 
     def get_absolute_url(self):
         return reverse('article', args=[str(self.id)])
+
 
 class PostCategory(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
