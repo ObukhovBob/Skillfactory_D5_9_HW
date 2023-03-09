@@ -1,18 +1,38 @@
 import datetime
-from django.contrib.auth.models import User
-from django.shortcuts import render
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-
+from django.contrib.auth.models import User, Group
+from django.shortcuts import render, redirect
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from .filters import PostFilter
 # Create your views here.
 from .models import Post, BaseRegisterForm
 from .forms import PostForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 
 
-class BaseRegisterView(CreateView):
+class BaseRegisterView(LoginRequiredMixin, CreateView):
     model = User
     form_class = BaseRegisterForm
-    success_url = '/'
+    success_url = '/user'
+
+
+class IndexView(LoginRequiredMixin, TemplateView):
+    template_name = 'user.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['not_author'] = not self.request.user.groups.filter(name='author').exists()
+        return context
+
+
+@login_required
+def upgrade_me(request):
+    user = request.user
+    author_group = Group.objects.get(name='author')
+    if not request.user.groups.filter(name='author').exists():
+        author_group.user_set.add(user)
+    return redirect('/')
 
 
 class AllList(ListView):
@@ -101,8 +121,9 @@ class Article(DetailView):
 
 
 # Добавляем новое представление для создания товаров.
-class NewsCreate(CreateView):
+class NewsCreate(PermissionRequiredMixin, CreateView):
     # Указываем нашу разработанную форму
+    permission_required = 'News.add_post'
     form_class = PostForm
     # модель товаров
     model = Post
@@ -117,7 +138,8 @@ class NewsCreate(CreateView):
         return super().form_valid(form)
 
 
-class ArticleCreate(CreateView):
+class ArticleCreate(PermissionRequiredMixin, CreateView):
+    permission_required = 'News.add_post'
     form_class = PostForm
     model = Post
     template_name = 'post_edit.html'
@@ -130,7 +152,8 @@ class ArticleCreate(CreateView):
         return super().form_valid(form)
 
 
-class NewsUpdate(UpdateView):
+class NewsUpdate(PermissionRequiredMixin, UpdateView):
+    permission_required = 'News.change_post'
     form_class = PostForm
     model = Post
     template_name = 'post_edit.html'

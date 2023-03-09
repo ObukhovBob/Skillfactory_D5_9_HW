@@ -144,7 +144,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATICFILES_DIRS = [BASE_DIR / 'static']
-
+LOGIN_URL = 'login/'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
@@ -153,5 +153,6 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
+ACCOUNT_FORMS = {'signup': 'News.models.BasicSignupForm'}
 
 SITE_ID = 1
