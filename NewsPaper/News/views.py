@@ -1,14 +1,45 @@
 import datetime
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.http import HttpResponseForbidden
+from django.urls import reverse
 from django.contrib.auth.models import User, Group
-from django.shortcuts import render, redirect
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from .filters import PostFilter
-# Create your views here.
-from .models import Post, BaseRegisterForm
-from .forms import PostForm
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.decorators import login_required
+from allauth.account.forms import SignupForm
+from django import forms
+from django.views import View
+from django.shortcuts import render, redirect
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, FormView
+from django.views.generic.detail import SingleObjectMixin
+from .forms import PostForm, SubscribeForm
+from .filters import PostFilter
+from .models import Post, Author, Subscribers
+
+
+class BasicSignupForm(SignupForm):
+
+    def save(self, request):
+        user = super(BasicSignupForm, self).save(request)
+        basic_group = Group.objects.get(name='common')
+        basic_group.user_set.add(user)
+        return user
+
+
+class BaseRegisterForm(UserCreationForm):
+    email = forms.EmailField(label="Email")
+    first_name = forms.CharField(label="Имя")
+    last_name = forms.CharField(label="Фамилия")
+
+    class Meta:
+        model = User
+        fields = ("username",
+                  "first_name",
+                  "last_name",
+                  "email",
+                  "password1",
+                  "password2",)
 
 
 class BaseRegisterView(LoginRequiredMixin, CreateView):
@@ -32,7 +63,13 @@ def upgrade_me(request):
     author_group = Group.objects.get(name='author')
     if not request.user.groups.filter(name='author').exists():
         author_group.user_set.add(user)
-    return redirect('/')
+    return
+
+
+def sign(request):
+    user = request
+
+    return
 
 
 class AllList(ListView):
@@ -119,6 +156,45 @@ class Article(DetailView):
     # Название объекта, в котором будет выбранный пользователем продукт
     context_object_name = 'article'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = SubscribeForm()
+        return context
+
+
+class ArticleSubscribe(SingleObjectMixin, FormView):
+    template_name = 'article.html'
+    form_class = SubscribeForm
+    model = Post
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden()
+        self.object = self.get_object()
+        subs = Subscribers()
+        user = request.user
+        categorys = self.object.category.all()
+        subs_list=[]
+        for cat in categorys:
+            subs_list.append(Subscribers(user=user, category=cat))
+        Subscribers.objects.bulk_create(subs_list)
+        return super().post(request, *args, **kwargs)
+
+
+
+    def get_success_url(self):
+        return reverse('article', kwargs={"pk": self.object.pk})
+
+
+class ArticleView(View):
+    def get(self, request, *args, **kwargs):
+        view = Article.as_view()
+        return view(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        view = ArticleSubscribe.as_view()
+        return view(request, *args, **kwargs)
+
 
 # Добавляем новое представление для создания товаров.
 class NewsCreate(PermissionRequiredMixin, CreateView):
@@ -130,11 +206,34 @@ class NewsCreate(PermissionRequiredMixin, CreateView):
     # и новый шаблон, в котором используется форма.
     template_name = 'post_edit.html'
 
+
+    def post(self, request, *args, **kwargs):
+
+        post = super().post(request, *args, **kwargs)
+
+        html_content = render_to_string(
+            'post_created.html',
+            {
+                'post': self.object,
+            }
+        )
+        msg = EmailMultiAlternatives(
+            subject=f'{self.object.header} {self.object.timestamp}',
+            body=self.object.text,  # сообщение с кратким описанием проблемы
+            from_email='vm.obukhov@yandex.ru',  # здесь указываете почту, с которой будете отправлять
+            to=['bobilo@mail.ru'],
+        )
+        msg.attach_alternative(html_content, "text/html")  # добавляем html
+        msg.send()
+        return post
+
     def form_valid(self, form):
         post = form.save(commit=False)
         post.content_type = Post.news
         post.rating = 0
         post.timestamp = datetime.datetime.now()
+
+
         return super().form_valid(form)
 
 
