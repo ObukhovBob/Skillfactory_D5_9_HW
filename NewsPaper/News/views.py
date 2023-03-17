@@ -1,6 +1,6 @@
 import datetime
-from django.core.mail import send_mail, EmailMultiAlternatives
-from django.template.loader import render_to_string
+
+
 from django.http import HttpResponseForbidden
 from django.urls import reverse
 from django.contrib.auth.models import User, Group
@@ -16,6 +16,10 @@ from django.views.generic.detail import SingleObjectMixin
 from .forms import PostForm, SubscribeForm
 from .filters import PostFilter
 from .models import Post, Author, Subscribers
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
 
 
 class BasicSignupForm(SignupForm):
@@ -206,26 +210,6 @@ class NewsCreate(PermissionRequiredMixin, CreateView):
     # и новый шаблон, в котором используется форма.
     template_name = 'post_edit.html'
 
-
-    def post(self, request, *args, **kwargs):
-
-        post = super().post(request, *args, **kwargs)
-
-        html_content = render_to_string(
-            'post_created.html',
-            {
-                'post': self.object,
-            }
-        )
-        msg = EmailMultiAlternatives(
-            subject=f'{self.object.header} {self.object.timestamp}',
-            body=self.object.text,  # сообщение с кратким описанием проблемы
-            from_email='vm.obukhov@yandex.ru',  # здесь указываете почту, с которой будете отправлять
-            to=['bobilo@mail.ru'],
-        )
-        msg.attach_alternative(html_content, "text/html")  # добавляем html
-        msg.send()
-        return post
 
     def form_valid(self, form):
         post = form.save(commit=False)
