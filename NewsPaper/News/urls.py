@@ -2,7 +2,7 @@ from django.urls import path
 from django.urls import include
 # Импортируем созданное нами представление
 from .views import NewsList, Article, NewsSearch, ArticleCreate, NewsCreate, NewsUpdate, ArticleList, \
-   AllList, BaseRegisterView, IndexView, upgrade_me, sign, ArticleView
+   AllList, BaseRegisterView, IndexView, upgrade_me, sign, ArticleView, CeleryView
 from django.contrib.auth.views import LoginView, LogoutView
 
 
@@ -30,4 +30,5 @@ urlpatterns = [
    path('user/', IndexView.as_view(template_name='user.html'), name='user'),
    path('upgrade/', upgrade_me, name='upgrade'),
    path('sign/', sign, name='sign'),
+   path('celery/', CeleryView.as_view()),
 ]

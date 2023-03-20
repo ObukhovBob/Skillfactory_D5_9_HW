@@ -1,7 +1,6 @@
 import datetime
-
-
-from django.http import HttpResponseForbidden
+from .tasks import hello
+from django.http import HttpResponseForbidden, HttpResponse
 from django.urls import reverse
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm
@@ -76,6 +75,11 @@ def sign(request):
     return
 
 
+class CeleryView(View):
+    def get(self, request):
+        hello.delay()
+        return HttpResponse('Hello!')
+
 class AllList(ListView):
     # Указываем модель, объекты которой мы будем выводить
     model = Post
@@ -88,6 +92,8 @@ class AllList(ListView):
     # Его надо указать, чтобы обратиться к списку объектов в html-шаблоне.
     context_object_name = 'posts'
     paginate_by = 2
+
+
 
 
 class NewsList(ListView):

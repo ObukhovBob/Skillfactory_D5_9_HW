@@ -123,6 +123,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CELERY_BROKER_URL = 'redis://' + str(os.getenv('REDIS')) + '@redis-16994.c250.eu-central-1-1.ec2.cloud.redislabs.com:16994'
+CELERY_RESULT_BACKEND = 'redis://' + str(os.getenv('REDIS')) + '@redis-16994.c250.eu-central-1-1.ec2.cloud.redislabs.com:16994'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
