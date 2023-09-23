@@ -1,9 +1,5 @@
 from django import forms
-from .models import Post, Author
-from django.contrib.auth.models import User, Group
-
-
-
+from .models import Post, Subscribers
 
 
 class PostForm(forms.ModelForm):
@@ -12,4 +8,6 @@ class PostForm(forms.ModelForm):
         fields = ['header', 'text', 'author', 'category']
 
 
+class SubscribeForm(forms.Form):
+    pass
 

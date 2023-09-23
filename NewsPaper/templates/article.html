@@ -18,11 +18,21 @@
                <td><kbd>Тип</kbd></td>
                <td><small>{{ article.get_content_type_display }}</small></td>
                <td><kbd>Автор</kbd></td>
-               <td><small>{{ article.author.user }}</small></td>
+               <td><small>{{ article.author }}</small></td>
+               <td><kbd>Категория</kbd></td>
+               <td><small>{{ article.category.all|join:", " }}</small></td>
            </tr>
 
        </table>
 <h4> {{ article.text|bad_words }} </h4>
+{% if user.is_authenticated %}
+<form action="" method="POST">
+    {% csrf_token %}
+     {{ form.as_p }}
+     <button type="submit">Subscribe</button>
+</form>
+{% endif %}
+
 
 
 

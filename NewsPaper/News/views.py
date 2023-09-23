@@ -1,14 +1,48 @@
 import datetime
+from .tasks import hello
+from django.http import HttpResponseForbidden, HttpResponse
+from django.urls import reverse
 from django.contrib.auth.models import User, Group
-from django.shortcuts import render, redirect
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from .filters import PostFilter
-# Create your views here.
-from .models import Post, BaseRegisterForm
-from .forms import PostForm
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.decorators import login_required
+from allauth.account.forms import SignupForm
+from django import forms
+from django.views import View
+from django.shortcuts import render, redirect
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, FormView
+from django.views.generic.detail import SingleObjectMixin
+from .forms import PostForm, SubscribeForm
+from .filters import PostFilter
+from .models import Post, Author, Subscribers
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+
+
+class BasicSignupForm(SignupForm):
+
+    def save(self, request):
+        user = super(BasicSignupForm, self).save(request)
+        basic_group = Group.objects.get(name='common')
+        basic_group.user_set.add(user)
+        return user
+
+
+class BaseRegisterForm(UserCreationForm):
+    email = forms.EmailField(label="Email")
+    first_name = forms.CharField(label="Имя")
+    last_name = forms.CharField(label="Фамилия")
+
+    class Meta:
+        model = User
+        fields = ("username",
+                  "first_name",
+                  "last_name",
+                  "email",
+                  "password1",
+                  "password2",)
 
 
 class BaseRegisterView(LoginRequiredMixin, CreateView):
@@ -32,8 +66,19 @@ def upgrade_me(request):
     author_group = Group.objects.get(name='author')
     if not request.user.groups.filter(name='author').exists():
         author_group.user_set.add(user)
-    return redirect('/')
+    return
 
+
+def sign(request):
+    user = request
+
+    return
+
+
+class CeleryView(View):
+    def get(self, request):
+        hello.delay()
+        return HttpResponse('Hello!')
 
 class AllList(ListView):
     # Указываем модель, объекты которой мы будем выводить
@@ -47,6 +92,8 @@ class AllList(ListView):
     # Его надо указать, чтобы обратиться к списку объектов в html-шаблоне.
     context_object_name = 'posts'
     paginate_by = 2
+
+
 
 
 class NewsList(ListView):
@@ -119,6 +166,45 @@ class Article(DetailView):
     # Название объекта, в котором будет выбранный пользователем продукт
     context_object_name = 'article'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = SubscribeForm()
+        return context
+
+
+class ArticleSubscribe(SingleObjectMixin, FormView):
+    template_name = 'article.html'
+    form_class = SubscribeForm
+    model = Post
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden()
+        self.object = self.get_object()
+        subs = Subscribers()
+        user = request.user
+        categorys = self.object.category.all()
+        subs_list=[]
+        for cat in categorys:
+            subs_list.append(Subscribers(user=user, category=cat))
+        Subscribers.objects.bulk_create(subs_list)
+        return super().post(request, *args, **kwargs)
+
+
+
+    def get_success_url(self):
+        return reverse('article', kwargs={"pk": self.object.pk})
+
+
+class ArticleView(View):
+    def get(self, request, *args, **kwargs):
+        view = Article.as_view()
+        return view(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        view = ArticleSubscribe.as_view()
+        return view(request, *args, **kwargs)
+
 
 # Добавляем новое представление для создания товаров.
 class NewsCreate(PermissionRequiredMixin, CreateView):
@@ -130,11 +216,14 @@ class NewsCreate(PermissionRequiredMixin, CreateView):
     # и новый шаблон, в котором используется форма.
     template_name = 'post_edit.html'
 
+
     def form_valid(self, form):
         post = form.save(commit=False)
         post.content_type = Post.news
         post.rating = 0
         post.timestamp = datetime.datetime.now()
+
+
         return super().form_valid(form)
 
 
